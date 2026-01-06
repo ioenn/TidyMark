@@ -62,6 +62,8 @@ class OptionsManager {
           'showBookmarks',
           // 热门栏目显示与数量
           'navShowTopVisited', 'navTopVisitedCount',
+          // 书签分类列数
+          'bookmarkColumns',
           // 自动归档旧书签
           'autoArchiveOldBookmarks', 'archiveOlderThanDays',
           // GitHub 同步配置
@@ -115,6 +117,7 @@ class OptionsManager {
           'topVisitedUnfocusedOpacity',
           'showBookmarks',
           'navShowTopVisited', 'navTopVisitedCount',
+          'bookmarkColumns',
           'autoArchiveOldBookmarks', 'archiveOlderThanDays',
           'githubToken', 'githubOwner', 'githubRepo', 'githubFormat', 'githubDualUpload', 'githubPath', 'githubPathHtml',
           'githubAutoSyncDaily', 'githubLastAutoSyncDate',
@@ -297,6 +300,7 @@ class OptionsManager {
         showBookmarks: false,
         navShowTopVisited: false,
         navTopVisitedCount: 10,
+        bookmarkColumns: 2,
         autoArchiveOldBookmarks: false,
         archiveOlderThanDays: 180,
         githubToken: '',
@@ -760,6 +764,20 @@ class OptionsManager {
         const val = parseInt(e.target.value, 10);
         if (Number.isFinite(val)) {
           this.settings.navTopVisitedCount = Math.max(1, Math.min(50, val));
+          this.saveSettings();
+        }
+      });
+    }
+
+    // 书签分类列数
+    const bookmarkColumns = document.getElementById('bookmarkColumns');
+    if (bookmarkColumns) {
+      const init = Number.isFinite(this.settings.bookmarkColumns) ? this.settings.bookmarkColumns : 2;
+      bookmarkColumns.value = String(init);
+      bookmarkColumns.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (Number.isFinite(val)) {
+          this.settings.bookmarkColumns = Math.max(1, Math.min(5, val));
           this.saveSettings();
         }
       });

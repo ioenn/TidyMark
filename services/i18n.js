@@ -590,6 +590,8 @@
     'options.nav.topVisited.count.label': { 'zh-CN': '热门栏目数量（Top N）', 'zh-TW': '熱門欄目數量（Top N）', 'en': 'Top visited count (Top N)', 'ru': 'Количество в «Популярных» (Top N)' },
     'options.nav.topVisited.count.placeholder': { 'zh-CN': '10', 'zh-TW': '10', 'en': '10', 'ru': '10' },
     'options.nav.topVisited.count.desc': { 'zh-CN': '控制显示的热门栏目数量，建议 5-20', 'zh-TW': '控制顯示的熱門欄目數量，建議 5-20', 'en': 'Number of items to show; recommended 5–20', 'ru': 'Количество элементов; рекомендовано 5–20' },
+    'options.nav.bookmarkColumns.label': { 'zh-CN': '书签分类列数', 'zh-TW': '書籤分類列數', 'en': 'Bookmark columns', 'ru': 'Количество столбцов закладок' },
+    'options.nav.bookmarkColumns.desc': { 'zh-CN': '控制书签分类的显示列数，建议 2-3 列（1-5 列可选）', 'zh-TW': '控制書籤分類的顯示列數，建議 2-3 列（1-5 列可選）', 'en': 'Control number of columns for bookmark categories; recommended 2–3 (1–5 available)', 'ru': 'Количество столбцов для категорий закладок; рекомендовано 2–3 (доступно 1–5)' },
     'options.archive.header': { 'zh-CN': '🗂️ 自动归档旧书签', 'zh-TW': '🗂️ 自動歸檔舊書籤', 'en': '🗂️ Auto-archive old bookmarks', 'ru': '🗂️ Автоархив старых закладок' },
     'options.archive.desc': { 'zh-CN': '根据最近访问时间自动将不常访问的书签移动到“归档”文件夹（默认关闭）', 'zh-TW': '依最近造訪時間自動將不常造訪的書籤移至「歸檔」資料夾（預設關閉）', 'en': 'Move infrequently visited bookmarks to “Archive” based on last visit (off by default)', 'ru': 'Перемещать редко посещаемые закладки в «Архив» по дате последнего визита (по умолчанию выкл.)' },
     'options.archive.toggle': { 'zh-CN': '启用自动归档', 'zh-TW': '啟用自動歸檔', 'en': 'Enable auto-archive', 'ru': 'Включить автоархив' },
