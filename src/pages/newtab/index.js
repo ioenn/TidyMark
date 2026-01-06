@@ -14,6 +14,23 @@
   let navTopVisitedCount = 10;
   let categoriesMapCache = null;
 
+  // 语言检测
+  const _lang = (window.I18n && typeof window.I18n.getLanguageSync === 'function')
+    ? window.I18n.getLanguageSync()
+    : (navigator.language || 'en');
+  let _isZh = String(_lang).toLowerCase().startsWith('zh');
+
+  // 模块开关状态
+  let sixtyEnabled = true;
+  let calendarEnabled = true;
+  
+  // 60s 提示文本
+  let currentSixtyTip = '';
+  const DEFAULT_SUBTITLE = '愿你高效、专注地浏览每一天';
+  
+  // 天气设置缓存
+  let cachedWeatherSettings = null;
+
   const elTime = document.getElementById('current-time');
   const elForm = document.getElementById('search-form');
   const elInput = document.getElementById('search-input');
@@ -32,7 +49,8 @@
   const elSixty = document.getElementById('sixty-seconds');
   const elSixtyBody = document.getElementById('sixty-body');
   const elSixtyDate = document.getElementById('sixty-date');
-  // 已移除单独的“查看原文”按钮
+  const elModulesRow = document.getElementById('modules-row');
+  // 已移除单独的"查看原文"按钮
   
   // 壁纸：60s Bing 壁纸
   const WALLPAPER_TTL = 6 * 60 * 60 * 1000; // 6小时缓存
@@ -369,13 +387,26 @@
 
   updateTime();
   setInterval(updateTime, 1000);
-  // 加载壁纸偏好与壁纸
-  await loadWallpaperPreference();
-  await loadWallpaper();
+  
+  // 并行加载所有偏好设置和API数据，优化加载速度
+  await Promise.all([
+    loadWallpaperPreference(),
+    loadTopVisitedPreference(),
+    loadVisitStats(),
+    loadSixtyPreference(),
+    loadCalendarPreference(),
+    loadShowBookmarksPreference()
+  ]);
+  
+  // 并行加载所有API数据（壁纸、天气、60s），使用缓存优先策略
+  Promise.all([
+    loadWallpaper().catch(err => console.warn('壁纸加载失败', err)),
+    loadWeather().catch(err => console.warn('天气加载失败', err)),
+    loadSixty().catch(err => console.warn('60s加载失败', err))
+  ]);
 
-  // 加载热门栏目配置与访问统计
-  await loadTopVisitedPreference();
-  await loadVisitStats();
+  // 加载副标题缓存
+  loadSubtitleCache();
 
   // 兜底：确保搜索输入在页面初始化后获得焦点（部分场景下浏览器可能忽略 HTML 的 autofocus）
   try {
@@ -517,8 +548,6 @@
   // 副标题缓存（用于在页面初始时快速显示上一次的提示）
   const SUBTITLE_TTL = 24 * 60 * 60 * 1000; // 24小时缓存
   const SUBTITLE_CACHE_KEY = 'subtitle_main_cache_v1';
-  const DEFAULT_SUBTITLE = '愿你高效、专注地浏览每一天';
-  let currentSixtyTip = '';
 
   // 乱码修复：检测典型 UTF-8 被按 Latin-1 误解码的模式，并尽可能还原
   function fixMojibake(s) {
@@ -678,7 +707,7 @@
         </li>
       `).join('');
       elSixtyBody.innerHTML = `
-        <img class="sixty-cover" ${cover ? `src="${cover}"` : ''} alt="每日封面" onerror="this.style.display='none'" loading="lazy" />
+        <img class="sixty-cover" ${cover ? `src="${cover}"` : ''} alt="每日封面" onerror="this.style.display='none'" />
         <div class="sixty-content">
           <ul class="sixty-news">${newsItems}</ul>
         </div>
@@ -718,12 +747,6 @@
     } catch {}
   }
 
-  let sixtyEnabled = true;
-  const _lang = (window.I18n && typeof window.I18n.getLanguageSync === 'function')
-    ? window.I18n.getLanguageSync()
-    : (navigator.language || 'en');
-  let _isZh = String(_lang).toLowerCase().startsWith('zh');
-
   function updateLocaleVisibility() {
     try {
       const lang = (window.I18n && typeof window.I18n.getLanguageSync === 'function')
@@ -743,7 +766,26 @@
 
   function applySixtyEnabled(enabled) {
     sixtyEnabled = !!enabled;
-    if (elSixty) elSixty.hidden = !sixtyEnabled || !_isZh;
+    const elModulesRow = document.getElementById('modules-row');
+    const elCalendarSection = document.getElementById('calendar-section');
+    
+    // 60s模块的显示逻辑
+    if (elSixty) {
+      elSixty.hidden = !sixtyEnabled || !_isZh;
+    }
+    
+    // 日历模块根据设置显示
+    if (elCalendarSection) {
+      elCalendarSection.hidden = !calendarEnabled;
+    }
+    
+    // 如果两个模块都隐藏，隐藏整个容器
+    if (elModulesRow) {
+      const calendarVisible = !elCalendarSection.hidden;
+      const sixtyVisible = !elSixty.hidden;
+      elModulesRow.hidden = !calendarVisible && !sixtyVisible;
+    }
+    
     // 根据开关与提示内容，更新副标题文本
     renderSubtitle();
     if (sixtyEnabled) {
@@ -772,6 +814,32 @@
     applySixtyEnabled(enabled);
   }
 
+  async function loadCalendarPreference() {
+    let enabled = true;
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+        const { calendarEnabled } = await chrome.storage.sync.get(['calendarEnabled']);
+        enabled = calendarEnabled !== undefined ? !!calendarEnabled : true;
+      } else if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('calendarEnabled');
+        if (raw != null) {
+          try { enabled = !!JSON.parse(raw); } catch { enabled = raw === 'true'; }
+        }
+      }
+    } catch {}
+    calendarEnabled = !!enabled;
+    const elCalendarSection = document.getElementById('calendar-section');
+    if (elCalendarSection) {
+      elCalendarSection.hidden = !calendarEnabled;
+    }
+    const elModulesRow = document.getElementById('modules-row');
+    if (elModulesRow) {
+      const calendarVisible = !elCalendarSection.hidden;
+      const sixtyVisible = !elSixty.hidden;
+      elModulesRow.hidden = !calendarVisible && !sixtyVisible;
+    }
+  }
+
   async function loadSixty(force = false) {
     if (!elSixty) return;
     try {
@@ -784,7 +852,7 @@
         }
       }
       const ac = new AbortController();
-      const timer = setTimeout(() => ac.abort(), 15000);
+      const timer = setTimeout(() => ac.abort(), 30000);
       let data = null;
       try {
         data = await fetchSixtyData(ac.signal);
@@ -802,7 +870,9 @@
     } catch (err) {
       console.warn('加载 60s 栏目失败', err);
       if (elSixtyBody) {
-        elSixtyBody.innerHTML = '<div class="sixty-tip">加载失败，请稍后重试</div>';
+        const isTimeout = err.name === 'AbortError';
+        const errorMsg = isTimeout ? '加载超时，请稍后重试' : '加载失败，请稍后重试';
+        elSixtyBody.innerHTML = `<div class="sixty-tip">${errorMsg}</div>`;
       }
       // 清空提示，回退到默认副标题
       currentSixtyTip = '';
@@ -810,7 +880,6 @@
     }
   }
 
-  await loadSixtyPreference();
   // 页面打开时优先加载副标题缓存，然后由 60s 刷新带来更新
   async function loadSubtitleCache() {
     try {
@@ -820,10 +889,6 @@
         renderSubtitle();
       }
     } catch {}
-  }
-  await loadSubtitleCache();
-  if (!elSixty.hidden) {
-    await loadSixty();
   }
 
   function renderSubtitle() {
@@ -848,6 +913,9 @@
   const WEATHER_TTL = 15 * 60 * 1000; // 15分钟缓存
 
   async function getWeatherSettings() {
+    if (cachedWeatherSettings) {
+      return cachedWeatherSettings;
+    }
     let weatherEnabled = true;
     let weatherCity = '';
     try {
@@ -862,7 +930,8 @@
         weatherCity = (c || '').replace(/^"|"$/g, '').trim();
       }
     } catch {}
-    return { weatherEnabled, weatherCity };
+    cachedWeatherSettings = { weatherEnabled, weatherCity };
+    return cachedWeatherSettings;
   }
 
   async function getCachedWeather(city) {
@@ -1106,8 +1175,13 @@
           return;
         }
       }
-      const data = await fetchWeather(city);
-      // 尝试标准化常见结构（兼容 60s 文档结构与 vvhan 常见返回）
+      // 添加超时控制，避免长时间等待
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 10000); // 10秒超时
+      try {
+        const data = await fetchWeather(city);
+        clearTimeout(timer);
+        // 尝试标准化常见结构（兼容 60s 文档结构与 vvhan 常见返回）
       const normalized = (() => {
         if (!data) return null;
         // 60s 文档示例：
@@ -1136,6 +1210,13 @@
       })();
       await setCachedWeather(city, normalized);
       renderWeather(normalized);
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.warn('天气加载超时');
+        } else {
+          throw err;
+        }
+      }
     } catch (err) {
       console.warn('天气加载失败', err);
       renderWeather(null);
@@ -1780,6 +1861,19 @@
       (b.title || '').toLowerCase().includes(kw) || (b.url || '').toLowerCase().includes(kw)
     );
 
+    const ROOTS = new Set([
+      '书签栏', 'Bookmarks bar', 'Bookmarks Bar',
+      '其他书签', 'Other bookmarks',
+      '移动设备书签', 'Mobile bookmarks'
+    ].map(s => s.toLowerCase()));
+
+    function formatCategory(path) {
+      const parts = String(path || '').split('/').filter(Boolean);
+      if (!parts.length) return '未分类';
+      if (ROOTS.has(parts[0].toLowerCase())) parts.shift();
+      return parts.join('/') || '未分类';
+    }
+
     const section = document.createElement('section');
     section.className = 'section';
     section.id = 'bookmark-search-results';
@@ -1819,20 +1913,32 @@
       main.appendChild(u);
       link.appendChild(bullet);
       link.appendChild(main);
+      link.addEventListener('click', () => {
+        const catName = formatCategory(item.parentPath);
+        const bookmarkKey = item.id || item.url;
+        recordVisit(catName, bookmarkKey);
+      });
       li.appendChild(link);
       list.appendChild(li);
     });
 
     section.appendChild(header);
     section.appendChild(list);
-    if (elMain && elSixty) {
-      // 将搜索结果插入到 60s 栏目之前
-      elMain.insertBefore(section, elSixty);
+    if (elMain && elModulesRow) {
+      const topVisited = document.getElementById('top-visited');
+      if (topVisited) {
+        elMain.insertBefore(section, topVisited);
+      } else {
+        elMain.insertBefore(section, elModulesRow);
+      }
     } else if (elMain && elSections) {
-      // 兜底：插入到书签列表之前
-      elMain.insertBefore(section, elSections);
+      const topVisited = document.getElementById('top-visited');
+      if (topVisited) {
+        elMain.insertBefore(section, topVisited);
+      } else {
+        elMain.insertBefore(section, elSections);
+      }
     } else if (elMain) {
-      // 最后兜底：插入到主区域最前面
       elMain.prepend(section);
     } else {
       document.body.appendChild(section);
@@ -1889,6 +1995,23 @@
     // 记录最近访问时间
     if (key) visitStats.lastByBookmark[key] = Date.now();
     saveVisitStats();
+    if (navShowTopVisited && categoriesMapCache) {
+      renderTopVisitedCategories(categoriesMapCache);
+    }
+  }
+
+  function deleteVisitRecord(bookmarkKey) {
+    const key = String(bookmarkKey || '');
+    if (!key) return;
+    
+    // 删除书签的访问统计
+    delete visitStats.byBookmark[key];
+    delete visitStats.lastByBookmark[key];
+    
+    // 保存更新后的统计
+    saveVisitStats();
+    
+    // 重新渲染热门栏目
     if (navShowTopVisited && categoriesMapCache) {
       renderTopVisitedCategories(categoriesMapCache);
     }
@@ -1990,8 +2113,9 @@
       } else {
       for (const [key, c] of top) {
         const li = document.createElement('li');
+        const item = document.createElement('div');
+        item.className = 'item';
         const link = document.createElement('a');
-        link.className = 'item';
         const bm = resolveBookmark(key);
         link.href = bm.url || '#';
         link.target = '_blank';
@@ -2015,7 +2139,20 @@
           const catName = formatCategory(bm.parentPath);
           recordVisit(catName, key);
         });
-        li.appendChild(link);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '×';
+        deleteBtn.title = '删除此记录';
+        deleteBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          deleteVisitRecord(key);
+        });
+        
+        item.appendChild(link);
+        item.appendChild(deleteBtn);
+        li.appendChild(item);
         list.appendChild(li);
       }
       }
@@ -2024,8 +2161,8 @@
       section.appendChild(list);
       // 启用顶层模块拖拽（在 main 容器内重排）
       enableDragOnSection(section);
-      if (elMain && elSixty) {
-        elMain.insertBefore(section, elSixty);
+      if (elMain && elModulesRow) {
+        elMain.insertBefore(section, elModulesRow);
       } else if (elMain && elSections) {
         elMain.insertBefore(section, elSections);
       } else {
@@ -2050,6 +2187,13 @@
           }
         });
       }
+      if (area === 'sync' && changes.calendarEnabled) {
+        loadCalendarPreference();
+      }
+      if (area === 'sync' && (changes.weatherEnabled || changes.weatherCity)) {
+        cachedWeatherSettings = null;
+        loadWeather(true);
+      }
     });
   }
 
@@ -2064,9 +2208,245 @@
         }
       });
     }
+    if (e.key === 'calendarEnabled') {
+      loadCalendarPreference();
+    }
+    if (e.key === 'weatherEnabled' || e.key === 'weatherCity') {
+      cachedWeatherSettings = null;
+      loadWeather(true);
+    }
   });
   // 启用 60s 顶层模块拖拽（在 main 容器内重排）
   if (elSixty) enableDragOnSection(elSixty);
   // 初次加载尝试应用持久化顺序（可能仅有 60s 或热门栏目）
   applyMainModuleOrder();
+
+  // 日历模块
+  const elCalendarSection = document.getElementById('calendar-section');
+  const elCalendarBody = document.getElementById('calendar-body');
+  const elCalendarMonthYear = document.getElementById('calendar-month-year');
+  const elCalendarPrev = document.getElementById('calendar-prev');
+  const elCalendarNext = document.getElementById('calendar-next');
+
+  let calendarCurrentDate = new Date();
+  const calendarCache = new Map();
+  const CALENDAR_CACHE_KEY_PREFIX = 'calendar_';
+  let currentRenderKey = '';
+  const holidayYearCache = new Map();
+
+  async function fetchHolidayYear(year) {
+    if (holidayYearCache.has(year)) {
+      return holidayYearCache.get(year);
+    }
+
+    try {
+      const url = `https://timor.tech/api/holiday/year/${year}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Holiday API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.code === 0 && data.holiday) {
+        holidayYearCache.set(year, data.holiday);
+        return data.holiday;
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn('Failed to fetch holiday year:', error);
+      return null;
+    }
+  }
+
+  async function fetchCalendarInfo(year, month, day) {
+    const cacheKey = `${CALENDAR_CACHE_KEY_PREFIX}${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    if (calendarCache.has(cacheKey)) {
+      return calendarCache.get(cacheKey);
+    }
+
+    try {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
+      let lunarDay = '';
+      let festival = '';
+      let holidayName = '';
+      let isHoliday = false;
+
+      if (typeof Lunar !== 'undefined') {
+        try {
+          const lunar = Lunar.fromDate(new Date(year, month, day));
+          lunarDay = lunar.getDayInChinese();
+          const festivals = lunar.getFestivals();
+          festival = Array.isArray(festivals) ? festivals.join(' ') : '';
+        } catch (e) {
+          console.warn('Lunar library error:', e);
+        }
+      }
+
+      const monthDayKey = `${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const holidayYearData = await fetchHolidayYear(year);
+      
+      if (holidayYearData && holidayYearData[monthDayKey]) {
+        const holidayInfo = holidayYearData[monthDayKey];
+        isHoliday = holidayInfo.holiday || false;
+        holidayName = holidayInfo.name || '';
+      }
+
+      const info = {
+        lunar: lunarDay,
+        lunarDay: lunarDay,
+        festival: festival,
+        term: '',
+        isHoliday: isHoliday,
+        holidayName: holidayName
+      };
+      
+      calendarCache.set(cacheKey, info);
+      return info;
+    } catch (error) {
+      console.warn('Failed to fetch calendar info:', error);
+      return null;
+    }
+  }
+
+  async function renderCalendar(date) {
+    if (!elCalendarBody || !elCalendarMonthYear) return;
+
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const renderKey = `${year}-${month}`;
+
+    currentRenderKey = renderKey;
+
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth();
+    const todayDate = today.getDate();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
+
+    const monthNames = [
+      '一月', '二月', '三月', '四月', '五月', '六月',
+      '七月', '八月', '九月', '十月', '十一月', '十二月'
+    ];
+
+    elCalendarMonthYear.textContent = `${year}年 ${monthNames[month]}`;
+
+    // 使用DocumentFragment批量更新DOM，减少重排
+    const fragment = document.createDocumentFragment();
+    elCalendarBody.innerHTML = '';
+
+    const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+    weekDays.forEach(day => {
+      const dayEl = document.createElement('div');
+      dayEl.className = 'calendar-weekday';
+      dayEl.textContent = day;
+      fragment.appendChild(dayEl);
+    });
+
+    for (let i = 0; i < startDayOfWeek; i++) {
+      const emptyEl = document.createElement('div');
+      emptyEl.className = 'calendar-day empty';
+      fragment.appendChild(emptyEl);
+    }
+
+    const calendarPromises = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayEl = document.createElement('div');
+      dayEl.className = 'calendar-day';
+
+      const numberEl = document.createElement('div');
+      numberEl.className = 'day-number';
+      numberEl.textContent = day;
+      dayEl.appendChild(numberEl);
+
+      if (year === todayYear && month === todayMonth && day === todayDate) {
+        dayEl.classList.add('today');
+      }
+
+      const infoPromise = fetchCalendarInfo(year, month, day);
+      calendarPromises.push({ dayEl, infoPromise, day, year, month });
+
+      dayEl.addEventListener('click', () => {
+        const clickedDate = new Date(year, month, day);
+        const dateStr = clickedDate.toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        console.log('Selected date:', dateStr);
+      });
+
+      fragment.appendChild(dayEl);
+    }
+
+    // 一次性将所有元素添加到DOM
+    elCalendarBody.appendChild(fragment);
+
+    const results = await Promise.allSettled(calendarPromises.map(p => p.infoPromise));
+    
+    if (currentRenderKey !== renderKey) {
+      return;
+    }
+    
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value) {
+        const { dayEl, day } = calendarPromises[index];
+        const info = result.value;
+
+        if (info.holidayName) {
+          const holidayEl = document.createElement('div');
+          holidayEl.className = 'holiday';
+          holidayEl.textContent = info.holidayName;
+          dayEl.appendChild(holidayEl);
+        } else if (info.lunarDay) {
+          const lunarEl = document.createElement('div');
+          lunarEl.className = 'lunar-day';
+          lunarEl.textContent = info.lunarDay;
+          dayEl.appendChild(lunarEl);
+        }
+      }
+    });
+  }
+
+  function initCalendar() {
+    if (!elCalendarSection || !elCalendarBody) return;
+
+    renderCalendar(calendarCurrentDate);
+
+    if (elCalendarPrev) {
+      elCalendarPrev.addEventListener('click', () => {
+        calendarCurrentDate.setMonth(calendarCurrentDate.getMonth() - 1);
+        renderCalendar(calendarCurrentDate);
+      });
+    }
+
+    if (elCalendarNext) {
+      elCalendarNext.addEventListener('click', () => {
+        calendarCurrentDate.setMonth(calendarCurrentDate.getMonth() + 1);
+        renderCalendar(calendarCurrentDate);
+      });
+    }
+
+    elCalendarSection.hidden = false;
+
+    if (typeof enableDragOnSection === 'function') {
+      enableDragOnSection(elCalendarSection);
+    }
+  }
+
+  initCalendar();
 })();

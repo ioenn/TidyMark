@@ -53,6 +53,7 @@ class OptionsManager {
           'weatherCity',
           'wallpaperEnabled',
           'sixtySecondsEnabled',
+          'calendarEnabled',
           // 新增：分离透明度与书签栏默认收起
           'searchUnfocusedOpacity',
           'bookmarksUnfocusedOpacity',
@@ -190,6 +191,7 @@ class OptionsManager {
           const explicit = result.sixtySecondsEnabled;
           return explicit !== undefined ? !!explicit : isZh;
         })(),
+        calendarEnabled: result.calendarEnabled !== undefined ? !!result.calendarEnabled : true,
         searchUnfocusedOpacity: (() => {
           const v = result.searchUnfocusedOpacity;
           const num = typeof v === 'string' ? parseFloat(v) : v;
@@ -656,6 +658,15 @@ class OptionsManager {
     if (sixtySecondsEnabled) {
       sixtySecondsEnabled.addEventListener('change', (e) => {
         this.settings.sixtySecondsEnabled = !!e.target.checked;
+        this.saveSettings();
+      });
+    }
+
+    // 日历开关
+    const calendarEnabled = document.getElementById('calendarEnabled');
+    if (calendarEnabled) {
+      calendarEnabled.addEventListener('change', (e) => {
+        this.settings.calendarEnabled = !!e.target.checked;
         this.saveSettings();
       });
     }
@@ -2297,6 +2308,8 @@ class OptionsManager {
     }
     const sixtySecondsEnabled = document.getElementById('sixtySecondsEnabled');
     if (sixtySecondsEnabled) sixtySecondsEnabled.checked = !!this.settings.sixtySecondsEnabled;
+    const calendarEnabled = document.getElementById('calendarEnabled');
+    if (calendarEnabled) calendarEnabled.checked = !!this.settings.calendarEnabled;
 
     // 非聚焦透明度回显（分离）
     const searchOpacity = document.getElementById('searchUnfocusedOpacity');

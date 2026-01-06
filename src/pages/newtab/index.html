@@ -43,22 +43,42 @@
         </button>
       </form>
       
-      <!-- 60s 读懂世界（可配置开关） -->
-      <section class="section" id="sixty-seconds" hidden aria-live="polite">
-        <div class="section-header">
-          <div class="section-head-left">
-            <span class="drag-handle" aria-hidden="true">⋮⋮</span>
-            <div class="section-title" data-i18n="newtab.readworld.title">60s 读懂世界</div>
+      <!-- 日历和60s模块并排显示 -->
+      <div class="modules-row" id="modules-row">
+        <!-- 日历模块（可配置开关） -->
+        <section class="section calendar-section" id="calendar-section" aria-live="polite">
+          <div class="section-header">
+            <div class="section-head-left">
+              <span class="drag-handle" aria-hidden="true">⋮⋮</span>
+              <div class="section-title" data-i18n="newtab.calendar.title">日历</div>
+            </div>
+            <div class="section-head-right">
+              <button type="button" class="calendar-nav-btn" id="calendar-prev" aria-label="上个月">‹</button>
+              <div class="section-count" id="calendar-month-year">--</div>
+              <button type="button" class="calendar-nav-btn" id="calendar-next" aria-label="下个月">›</button>
+            </div>
           </div>
-          <div class="section-head-right">
-            <div class="section-count" id="sixty-date">--</div>
+          <div class="calendar-body" id="calendar-body">
+            <!-- 由脚本渲染：日历网格 -->
           </div>
-        </div>
-        <div class="sixty-body" id="sixty-body">
-          <!-- 由脚本渲染：封面、新闻列表 -->
-        </div>
-      </section>
-      
+        </section>
+
+        <!-- 60s 读懂世界（可配置开关） -->
+        <section class="section sixty-section" id="sixty-seconds" hidden aria-live="polite">
+          <div class="section-header">
+            <div class="section-head-left">
+              <span class="drag-handle" aria-hidden="true">⋮⋮</span>
+              <div class="section-title" data-i18n="newtab.readworld.title">60s 读懂世界</div>
+            </div>
+            <div class="section-head-right">
+              <div class="section-count" id="sixty-date">--</div>
+            </div>
+          </div>
+          <div class="sixty-body" id="sixty-body">
+            <!-- 由脚本渲染：封面、新闻列表 -->
+          </div>
+        </section>
+      </div>
 
       <section class="bookmarks" id="bookmark-sections" aria-live="polite">
         <!-- 动态渲染书签分类与列表 -->
@@ -70,6 +90,7 @@
 
     <!-- 底部品牌已移除 -->
   </div>
+  <script src="../../../services/lunar.js"></script>
   <script src="../../../services/i18n.js"></script>
   <script src="index.js"></script>
 </body>
