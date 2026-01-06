@@ -2351,14 +2351,18 @@
       const windowWidth = window.innerWidth;
       let columns = bookmarkColumns;
       
+      // 响应式调整实际显示的列数
       if (windowWidth < 900) {
         columns = 1;
       } else if (windowWidth < 1200 && bookmarkColumns > 2) {
         columns = 2;
       }
       
+      // 应用到书签网格
       bookmarksEl.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
     }
+    
+    // 更新下拉菜单高亮状态 - 始终显示保存的设置值
     const elColumnsMenu = document.getElementById('columns-menu');
     if (elColumnsMenu) {
       elColumnsMenu.querySelectorAll('.dropdown-item').forEach(item => {

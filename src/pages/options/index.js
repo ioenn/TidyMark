@@ -221,7 +221,13 @@ class OptionsManager {
           if (Number.isFinite(num)) return Math.max(1, Math.min(50, num));
           return 10;
         })(),
-          autoArchiveOldBookmarks: result.autoArchiveOldBookmarks !== undefined ? !!result.autoArchiveOldBookmarks : false,
+        bookmarkColumns: (() => {
+          const v = result.bookmarkColumns;
+          const num = typeof v === 'string' ? parseInt(v, 10) : v;
+          if (Number.isFinite(num)) return Math.max(1, Math.min(5, num));
+          return 2;
+        })(),
+        autoArchiveOldBookmarks: result.autoArchiveOldBookmarks !== undefined ? !!result.autoArchiveOldBookmarks : false,
         archiveOlderThanDays: (() => {
           const v = result.archiveOlderThanDays;
           const num = typeof v === 'string' ? parseInt(v, 10) : v;
