@@ -265,10 +265,24 @@
             <div class="setting-item">
               <label for="aiProvider" data-i18n="ai.provider.label">AI 服务商</label>
               <select id="aiProvider">
-                <option value="openai">OpenAI</option>
-                <option value="deepseek">DeepSeek</option>
-                <option value="ollama">Ollama</option>
-                <option value="custom">自定义提供商</option>
+                <optgroup label="已测试">
+                  <option value="openai">OpenAI</option>
+                  <option value="deepseek">DeepSeek</option>
+                  <option value="ollama">Ollama</option>
+                  <option value="custom">自定义提供商</option>
+                </optgroup>
+                <optgroup label="未测试">
+                  <option value="claude">Claude (Anthropic)</option>
+                  <option value="gemini">Gemini (Google)</option>
+                  <option value="qwen">Qwen (通义千问)</option>
+                  <option value="doubao">Doubao (豆包)</option>
+                  <option value="kimi">Kimi (Moonshot)</option>
+                  <option value="zhipu">Zhipu (智谱)</option>
+                  <option value="baichuan">Baichuan (百川)</option>
+                  <option value="minimax">MiniMax</option>
+                  <option value="spark">Spark (讯飞星火)</option>
+                  <option value="ernie">ERNIE (文心一言)</option>
+                </optgroup>
               </select>
               <p class="setting-desc" data-i18n="ai.provider.desc">选择您偏好的 AI 服务提供商，或选择自定义以使用其他兼容服务</p>
             </div>

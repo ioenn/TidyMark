@@ -19,6 +19,8 @@
   --sixty-unfocused-opacity: 0.86;
   /* 非聚焦时透明度（新增：热门栏目） */
   --top-visited-unfocused-opacity: 0.86;
+  /* 非聚焦时透明度（新增：日历栏目） */
+  --calendar-unfocused-opacity: 0.86;
 }
 
 @media (prefers-color-scheme: light) {
@@ -233,6 +235,9 @@ body {
 #sixty-seconds:not(:hover) { opacity: var(--sixty-unfocused-opacity); }
 /* 热门栏目透明度控制 */
 #top-visited:not(:hover) { opacity: var(--top-visited-unfocused-opacity); }
+/* 日历栏目透明度控制 */
+#calendar-section { transition: opacity 160ms ease; }
+#calendar-section:not(:hover) { opacity: var(--calendar-unfocused-opacity); }
 #top-visited .item {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr) auto;
@@ -674,7 +679,6 @@ body.has-wallpaper .weather-refresh {
 
 /* 日历模块样式 */
 #calendar-section {
-  transition: opacity 0.3s ease;
   overflow: hidden;
 }
 

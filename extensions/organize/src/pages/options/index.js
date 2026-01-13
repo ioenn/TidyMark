@@ -164,7 +164,7 @@ class OptionsManager {
         this.settings = {
         classificationRules: result.classificationRules ?? this.getDefaultRules(),
         enableAI: result.enableAI ?? false,
-        aiProvider: ['openai','deepseek','ollama','custom','iflow'].includes(result.aiProvider) ? result.aiProvider : 'openai',
+        aiProvider: ['openai','deepseek','claude','gemini','qwen','doubao','kimi','zhipu','baichuan','minimax','spark','ernie','ollama','custom','iflow'].includes(result.aiProvider) ? result.aiProvider : 'openai',
         aiApiKey: result.aiApiKey ?? '',
         aiApiUrl: result.aiApiUrl ?? '',
         aiModel: result.aiModel ?? 'gpt-3.5-turbo',
@@ -369,6 +369,36 @@ class OptionsManager {
         break;
       case 'deepseek':
         validModels = ['deepseek-chat'];
+        break;
+      case 'claude':
+        validModels = ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'];
+        break;
+      case 'gemini':
+        validModels = ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'];
+        break;
+      case 'qwen':
+        validModels = ['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwen-long'];
+        break;
+      case 'doubao':
+        validModels = ['doubao-pro-256k', 'doubao-pro-32k', 'doubao-pro-4k', 'doubao-lite-32k'];
+        break;
+      case 'kimi':
+        validModels = ['moonshot-v1-128k', 'moonshot-v1-32k', 'moonshot-v1-8k'];
+        break;
+      case 'zhipu':
+        validModels = ['glm-4-plus', 'glm-4', 'glm-4-air', 'glm-4-flash', 'glm-3-turbo'];
+        break;
+      case 'baichuan':
+        validModels = ['Baichuan4', 'Baichuan3-Turbo', 'Baichuan3-Turbo-128k', 'Baichuan2-Turbo'];
+        break;
+      case 'minimax':
+        validModels = ['abab6.5s-chat', 'abab6.5-chat', 'abab5.5-chat'];
+        break;
+      case 'spark':
+        validModels = ['spark-max', 'spark-pro', 'spark-lite'];
+        break;
+      case 'ernie':
+        validModels = ['ernie-4.0-8k', 'ernie-4.0-turbo-8k', 'ernie-3.5-8k', 'ernie-speed-8k'];
         break;
       case 'iflow':
         validModels = ['deepseek-chat', 'deepseek-coder'];
@@ -4269,9 +4299,107 @@ class OptionsManager {
       models = [
         { value: 'deepseek-chat', label: 'DeepSeek-Chat' }
       ];
-      // 屏蔽 reasoner 类思考模型：不展示且强制回退
       if (!['deepseek-chat'].includes(this.settings.aiModel)) {
         this.settings.aiModel = 'deepseek-chat';
+      }
+    } else if (provider === 'claude') {
+      models = [
+        { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet (推荐)' },
+        { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
+        { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+        { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
+        { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' }
+      ];
+      if (!['claude-3-5-sonnet-20241022','claude-3-5-haiku-20241022','claude-3-opus-20240229','claude-3-sonnet-20240229','claude-3-haiku-20240307'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'claude-3-5-sonnet-20241022';
+      }
+    } else if (provider === 'gemini') {
+      models = [
+        { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash Exp (推荐)' },
+        { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+        { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+        { value: 'gemini-1.0-pro', label: 'Gemini 1.0 Pro' }
+      ];
+      if (!['gemini-2.0-flash-exp','gemini-1.5-pro','gemini-1.5-flash','gemini-1.0-pro'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'gemini-2.0-flash-exp';
+      }
+    } else if (provider === 'qwen') {
+      models = [
+        { value: 'qwen-max', label: 'Qwen-Max (推荐)' },
+        { value: 'qwen-plus', label: 'Qwen-Plus' },
+        { value: 'qwen-turbo', label: 'Qwen-Turbo' },
+        { value: 'qwen-long', label: 'Qwen-Long' }
+      ];
+      if (!['qwen-max','qwen-plus','qwen-turbo','qwen-long'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'qwen-max';
+      }
+    } else if (provider === 'doubao') {
+      models = [
+        { value: 'doubao-pro-256k', label: 'Doubao-Pro-256k (推荐)' },
+        { value: 'doubao-pro-32k', label: 'Doubao-Pro-32k' },
+        { value: 'doubao-pro-4k', label: 'Doubao-Pro-4k' },
+        { value: 'doubao-lite-32k', label: 'Doubao-Lite-32k' }
+      ];
+      if (!['doubao-pro-256k','doubao-pro-32k','doubao-pro-4k','doubao-lite-32k'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'doubao-pro-256k';
+      }
+    } else if (provider === 'kimi') {
+      models = [
+        { value: 'moonshot-v1-128k', label: 'Moonshot-v1-128k (推荐)' },
+        { value: 'moonshot-v1-32k', label: 'Moonshot-v1-32k' },
+        { value: 'moonshot-v1-8k', label: 'Moonshot-v1-8k' }
+      ];
+      if (!['moonshot-v1-128k','moonshot-v1-32k','moonshot-v1-8k'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'moonshot-v1-128k';
+      }
+    } else if (provider === 'zhipu') {
+      models = [
+        { value: 'glm-4-plus', label: 'GLM-4-Plus (推荐)' },
+        { value: 'glm-4', label: 'GLM-4' },
+        { value: 'glm-4-air', label: 'GLM-4-Air' },
+        { value: 'glm-4-flash', label: 'GLM-4-Flash' },
+        { value: 'glm-3-turbo', label: 'GLM-3-Turbo' }
+      ];
+      if (!['glm-4-plus','glm-4','glm-4-air','glm-4-flash','glm-3-turbo'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'glm-4-plus';
+      }
+    } else if (provider === 'baichuan') {
+      models = [
+        { value: 'Baichuan4', label: 'Baichuan4 (推荐)' },
+        { value: 'Baichuan3-Turbo', label: 'Baichuan3-Turbo' },
+        { value: 'Baichuan3-Turbo-128k', label: 'Baichuan3-Turbo-128k' },
+        { value: 'Baichuan2-Turbo', label: 'Baichuan2-Turbo' }
+      ];
+      if (!['Baichuan4','Baichuan3-Turbo','Baichuan3-Turbo-128k','Baichuan2-Turbo'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'Baichuan4';
+      }
+    } else if (provider === 'minimax') {
+      models = [
+        { value: 'abab6.5s-chat', label: 'abab6.5s-chat (推荐)' },
+        { value: 'abab6.5-chat', label: 'abab6.5-chat' },
+        { value: 'abab5.5-chat', label: 'abab5.5-chat' }
+      ];
+      if (!['abab6.5s-chat','abab6.5-chat','abab5.5-chat'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'abab6.5s-chat';
+      }
+    } else if (provider === 'spark') {
+      models = [
+        { value: 'spark-max', label: 'Spark-Max (推荐)' },
+        { value: 'spark-pro', label: 'Spark-Pro' },
+        { value: 'spark-lite', label: 'Spark-Lite' }
+      ];
+      if (!['spark-max','spark-pro','spark-lite'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'spark-max';
+      }
+    } else if (provider === 'ernie') {
+      models = [
+        { value: 'ernie-4.0-8k', label: 'ERNIE-4.0-8K (推荐)' },
+        { value: 'ernie-4.0-turbo-8k', label: 'ERNIE-4.0-Turbo-8K' },
+        { value: 'ernie-3.5-8k', label: 'ERNIE-3.5-8K' },
+        { value: 'ernie-speed-8k', label: 'ERNIE-Speed-8K' }
+      ];
+      if (!['ernie-4.0-8k','ernie-4.0-turbo-8k','ernie-3.5-8k','ernie-speed-8k'].includes(this.settings.aiModel)) {
+        this.settings.aiModel = 'ernie-4.0-8k';
       }
     } else if (provider === 'ollama') {
       // 优先尝试从远端 /api/tags 获取模型列表
@@ -4491,6 +4619,36 @@ Return only a valid JSON object strictly following the above format — no markd
     }
     if (p === 'deepseek') {
       return 'https://api.deepseek.com/v1/chat/completions';
+    }
+    if (p === 'claude') {
+      return 'https://api.anthropic.com/v1/messages';
+    }
+    if (p === 'gemini') {
+      return 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent';
+    }
+    if (p === 'qwen') {
+      return 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+    }
+    if (p === 'doubao') {
+      return 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+    }
+    if (p === 'kimi') {
+      return 'https://api.moonshot.cn/v1/chat/completions';
+    }
+    if (p === 'zhipu') {
+      return 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+    }
+    if (p === 'baichuan') {
+      return 'https://api.baichuan-ai.com/v1/chat/completions';
+    }
+    if (p === 'minimax') {
+      return 'https://api.minimax.chat/v1/text/chatcompletion_v2';
+    }
+    if (p === 'spark') {
+      return 'https://spark-api.xf-yun.com/v1/chat/completions';
+    }
+    if (p === 'ernie') {
+      return 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/ernie-4.0-8k';
     }
     if (p === 'ollama') {
       return 'http://localhost:11434/api/chat';
